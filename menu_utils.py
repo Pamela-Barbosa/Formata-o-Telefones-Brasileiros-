@@ -1,13 +1,10 @@
 """
 Módulo com os handlers (manipuladores) de cada opção do menu.
 """
-import sys
-from datetime import datetime
 from database import (
     salvar_telefone,
     salvar_consulta_ddd,
-    verificar_bloqueio,
-    adicionar_bloqueio
+    listar_telefones
 )
 from telefone_utils import (
     validar_formatar_numero,
@@ -15,7 +12,8 @@ from telefone_utils import (
     obter_uf_por_ddd,
     obter_ddds_por_uf,
     listar_ufs_disponiveis,
-    gerar_multiples_numeros
+    gerar_multiples_numeros,
+    comparar_numeros as comparar_numeros_telefones
 )
 from api_utils import consultar_ddd_api
 from ui_utils import (
@@ -23,6 +21,7 @@ from ui_utils import (
     exibir_tabela_telefone,
     exibir_tabela_ddd,
     exibir_tabela_numeros_gerados,
+    exibir_tabela_historico,
     exibir_painel,
     input_numero,
     input_ddd,
@@ -45,11 +44,6 @@ def validar_numero(conexao):
     if dados is None:
         exibir_mensagem("Número inválido!", "erro")
         return
-    
-    # Verifica bloqueio
-    bloqueado = verificar_bloqueio(conexao, dados['nacional'])
-    if bloqueado:
-        exibir_mensagem(f"⚠️ ATENÇÃO: Este número está BLOQUEADO! Motivo: {bloqueado[2]}", "aviso")
     
     # Valida DDD
     ddd_valido = validar_ddd(dados['ddd'])
@@ -203,71 +197,70 @@ def gerar_numeros(conexao):
     
     exibir_mensagem(f"✓ {salvos} números salvos no banco de dados.", "sucesso")
     
-    # Exportar vCard
-    exportar = input_sim_nao("\nDeseja exportar como arquivo vCard (.vcf)? (s/n)")
-    if exportar == "s":
-        nome_arquivo = f"contatos_{uf_info if uf_info else 'ddd'}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.vcf"
-        
-        try:
-            with open(nome_arquivo, 'w', encoding='utf-8') as f:
-                for i, num in enumerate(numeros_gerados, 1):
-                    f.write("BEGIN:VCARD\n")
-                    f.write("VERSION:3.0\n")
-                    f.write(f"FN:Contato {i}\n")
-                    f.write(f"TEL;TYPE=CELL:{num['formatado']}\n")
-                    f.write("END:VCARD\n")
-            
-            exibir_mensagem(f"✓ vCard exportado: {nome_arquivo}", "sucesso")
-        except Exception as e:
-            exibir_mensagem(f"Erro ao exportar vCard: {e}", "erro")
 
 
-def buscar_historico():
+def buscar_historico(conexao):
     """
-    Handler para opção 4: Buscar histórico (EM DESENVOLVIMENTO).
+    Handler para opção 4: Buscar histórico.
     """
     exibir_mensagem("\n--- BUSCAR HISTÓRICO ---", "info")
-    exibir_mensagem("⚠️ Funcionalidade em desenvolvimento...", "aviso")
-    exibir_painel(
-        "📋 Em breve você poderá:\n"
-        "• Listar todos os números consultados\n"
-        "• Filtrar por tipo (fixo/móvel/fictício)\n"
-        "• Filtrar por estado\n"
-        "• Ver todas as colunas relevantes",
-        titulo="🔨 EM CONSTRUÇÃO",
-        cor="yellow"
-    )
+    exibir_mensagem("Use os filtros abaixo para refinar os resultados.", "info")
+
+    opcao = input("Filtrar por (nenhum/tipo/ficticio/estado): ").strip().lower()
+    filtro = {}
+
+    if opcao == "tipo":
+        tipo = input("Tipo (Celular/Fixo/Outro): ").strip().capitalize()
+        if tipo not in ["Celular", "Fixo", "Outro"]:
+            exibir_mensagem("Tipo inválido. Use Celular, Fixo ou Outro.", "erro")
+            return
+        filtro['tipo'] = tipo
+
+    elif opcao == "ficticio":
+        resposta = input("Mostrar apenas números fictícios? (s/n): ").strip().lower()
+        if resposta not in ["s", "n"]:
+            exibir_mensagem("Resposta inválida. Use s ou n.", "erro")
+            return
+        filtro['ficticio'] = 1 if resposta == "s" else 0
+
+    elif opcao == "estado":
+        uf = input_uf()
+        ddds = obter_ddds_por_uf(uf)
+        if ddds is None:
+            exibir_mensagem(f"UF {uf} não encontrada.", "erro")
+            return
+        filtro['ddd_list'] = ddds
+
+    elif opcao != "nenhum":
+        exibir_mensagem("Opção de filtro inválida.", "erro")
+        return
+
+    registros = listar_telefones(conexao, filtro)
+
+    if not registros:
+        exibir_mensagem("Nenhum registro encontrado.", "aviso")
+        return
+
+    ufs = [obter_uf_por_ddd(registro[4]) or "N/A" for registro in registros]
+    exibir_tabela_historico(registros, ufs)
 
 
 def comparar_numeros():
     """
-    Handler para opção 5: Comparar dois números (EM DESENVOLVIMENTO).
+    Handler para opção 5: Comparar dois números.
     """
     exibir_mensagem("\n--- COMPARAR NÚMEROS ---", "info")
-    exibir_mensagem("⚠️ Funcionalidade em desenvolvimento...", "aviso")
-    exibir_painel(
-        "🔍 Em breve você poderá:\n"
-        "• Comparar dois números em formatos diferentes\n"
-        "• Extrair representação canônica de cada um\n"
-        "• Verificar se são equivalentes\n"
-        "• Calcular custo de ligação simulado",
-        titulo="🔨 EM CONSTRUÇÃO",
-        cor="yellow"
-    )
 
+    primeiro_numero = input_numero("Digite o primeiro número")
+    segundo_numero = input_numero("Digite o segundo número")
 
-def gerenciar_bloqueio():
-    """
-    Handler para opção 6: Gerenciar lista de bloqueio (EM DESENVOLVIMENTO).
-    """
-    exibir_mensagem("\n--- GERENCIAR LISTA DE BLOQUEIO ---", "info")
-    exibir_mensagem("⚠️ Funcionalidade em desenvolvimento...", "aviso")
-    exibir_painel(
-        "🚫 Em breve você poderá:\n"
-        "• Adicionar números à lista de bloqueio\n"
-        "• Remover números da lista\n"
-        "• Listar todos os bloqueios\n"
-        "• Receber alertas ao consultar números bloqueados",
-        titulo="🔨 EM CONSTRUÇÃO",
-        cor="yellow"
-    )
+    resultado = comparar_numeros_telefones(primeiro_numero, segundo_numero)
+
+    if resultado is None:
+        exibir_mensagem("Pelo menos um dos números não é válido.", "erro")
+        return
+
+    equivalente = "SIM" if resultado['equivalente'] else "NÃO"
+    exibir_mensagem(f"Equivalentes: {equivalente}", "info")
+    exibir_mensagem(f"Normalizado 1: {resultado['normalizado1']}", "info")
+    exibir_mensagem(f"Normalizado 2: {resultado['normalizado2']}", "info")

@@ -45,16 +45,6 @@ def criar_tabelas(conexao):
     )
     """)
     
-    # Tabela de bloqueio
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS bloqueio (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        numero TEXT,
-        motivo TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    
     conexao.commit()
 
 
@@ -94,6 +84,15 @@ def salvar_telefone(conexao, dados, valido, ficticio=0):
     return cursor.lastrowid
 
 
+def criar_banco():
+    """
+    Inicializa o banco de dados, criando as tabelas caso não existam.
+    """
+    conexao = criar_conexao()
+    criar_tabelas(conexao)
+    return conexao
+
+
 def salvar_consulta_ddd(conexao, ddd, estado, cidades):
     """
     Insere uma consulta de DDD no banco de dados.
@@ -117,14 +116,23 @@ def listar_telefones(conexao, filtro=None):
     cursor = conexao.cursor()
     query = "SELECT * FROM telefones"
     params = []
+    clauses = []
     
     if filtro:
         if filtro.get('tipo'):
-            query += " WHERE tipo = ?"
+            clauses.append("tipo = ?")
             params.append(filtro['tipo'])
-        elif filtro.get('ficticio') is not None:
-            query += " WHERE ficticio = ?"
+        if filtro.get('ficticio') is not None:
+            clauses.append("ficticio = ?")
             params.append(filtro['ficticio'])
+        if filtro.get('ddd_list'):
+            ddd_list = filtro['ddd_list']
+            placeholders = ", ".join("?" for _ in ddd_list)
+            clauses.append(f"ddd IN ({placeholders})")
+            params.extend(ddd_list)
+    
+    if clauses:
+        query += " WHERE " + " AND ".join(clauses)
     
     query += " ORDER BY timestamp DESC"
     cursor.execute(query, params)
@@ -140,28 +148,4 @@ def buscar_telefone_por_numero(conexao, numero):
     SELECT * FROM telefones 
     WHERE numero_nacional = ? OR numero_internacional = ?
     """, (numero, numero))
-    return cursor.fetchone()
-
-
-def adicionar_bloqueio(conexao, numero, motivo):
-    """
-    Adiciona um número à lista de bloqueio.
-    """
-    cursor = conexao.cursor()
-    cursor.execute("""
-    INSERT INTO bloqueio (numero, motivo)
-    VALUES (?, ?)
-    """, (numero, motivo))
-    conexao.commit()
-    return cursor.lastrowid
-
-
-def verificar_bloqueio(conexao, numero):
-    """
-    Verifica se um número está na lista de bloqueio.
-    """
-    cursor = conexao.cursor()
-    cursor.execute("""
-    SELECT * FROM bloqueio WHERE numero = ?
-    """, (numero,))
     return cursor.fetchone()

@@ -6,7 +6,6 @@ from rich.table import Table
 from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
 
-
 console = Console()
 
 
@@ -74,6 +73,38 @@ def exibir_tabela_ddd(ddd, estado, cidades, uf=None):
     console.print(table)
 
 
+def exibir_tabela_historico(registros, ufs):
+    """
+    Exibe o histórico de telefones em tabela.
+    """
+    table = Table(title="Histórico de Telefones")
+    table.add_column("ID", style="cyan", width=4)
+    table.add_column("Nacional", style="white")
+    table.add_column("Internacional", style="green")
+    table.add_column("Tipo", style="yellow")
+    table.add_column("DDD", style="magenta")
+    table.add_column("UF", style="blue")
+    table.add_column("Válido", style="green")
+    table.add_column("Fictício", style="red")
+    table.add_column("Timestamp", style="white")
+
+    for registro, uf in zip(registros, ufs):
+        _, numero_nacional, numero_internacional, tipo, ddd, _, valido, ficticio, timestamp = registro
+        table.add_row(
+            str(registro[0]),
+            numero_nacional or "",
+            numero_internacional or "",
+            tipo or "",
+            ddd or "",
+            uf,
+            valido or "",
+            "Sim" if ficticio else "Nao",
+            timestamp or ""
+        )
+
+    console.print(table)
+
+
 def exibir_menu():
     """
     Exibe o menu principal e retorna a opção escolhida.
@@ -88,14 +119,13 @@ def exibir_menu():
         ("3", "Gerar números válidos por região"),
         ("4", "Buscar histórico"),
         ("5", "Comparar dois números"),
-        ("6", "Gerenciar lista de bloqueio"),
         ("0", "Sair")
     ]
     
     for num, desc in menu_items:
         console.print(f"[{num}] {desc}")
     
-    return IntPrompt.ask("\nEscolha uma opção", choices=["0", "1", "2", "3", "4", "5", "6"])
+    return IntPrompt.ask("\nEscolha uma opção", choices=["0", "1", "2", "3", "4", "5"])
 
 
 def exibir_mensagem(mensagem, tipo="info"):

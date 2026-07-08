@@ -3,15 +3,14 @@ Ponto de entrada principal da aplicação.
 Apenas monta o menu e chama os menus.
 """
 import sys
-from database import recriar_banco
+from database import criar_banco
 from ui_utils import exibir_menu, exibir_mensagem
-from menus import (
+from menu_utils import (
     validar_numero,
     consultar_ddd,
     gerar_numeros,
     buscar_historico,
-    comparar_numeros,
-    gerenciar_bloqueio
+    comparar_numeros
 )
 
 
@@ -21,8 +20,8 @@ def main():
     Gerencia o loop do menu e chama os menus correspondentes.
     """
     try:
-        # Inicializa o banco de dados
-        conexao = recriar_banco()
+        # Inicializa o banco de dados (mantém histórico entre execuções)
+        conexao = criar_banco()
         exibir_mensagem("Sistema iniciado com sucesso!", "sucesso")
         
         while True:
@@ -47,15 +46,11 @@ def main():
             
             # Opção 4: Buscar histórico
             elif opcao == 4:
-                buscar_historico()
+                buscar_historico(conexao)
             
             # Opção 5: Comparar dois números
             elif opcao == 5:
                 comparar_numeros()
-            
-            # Opção 6: Gerenciar lista de bloqueio
-            elif opcao == 6:
-                gerenciar_bloqueio()
             
             # Opção inválida
             else:
