@@ -4,7 +4,7 @@ Apenas monta o menu e chama os menus.
 """
 import sys
 from database import criar_banco
-from ui_utils import exibir_menu, exibir_mensagem
+from ui_utils import exibir_menu, exibir_mensagem, input_text
 from menu_utils import (
     validar_numero,
     consultar_ddd,
@@ -56,7 +56,7 @@ def main():
             else:
                 exibir_mensagem("Opção inválida!", "erro")
             
-            input("\nPressione Enter para continuar...")
+            input_text("\nPressione Enter para continuar...")
         
         # Fecha a conexão com o banco
         conexao.close()

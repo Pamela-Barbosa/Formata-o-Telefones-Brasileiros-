@@ -28,7 +28,8 @@ from ui_utils import (
     input_uf,
     input_quantidade,
     input_tipo_numero,
-    input_sim_nao
+    input_sim_nao,
+    input_text
 )
 
 
@@ -102,7 +103,7 @@ def gerar_numeros(conexao):
     ufs_disponiveis = listar_ufs_disponiveis()
     exibir_mensagem(f"UFs disponíveis: {', '.join(ufs_disponiveis)}", "info")
     
-    opcao = input("Deseja gerar por UF ou DDD? (uf/ddd): ")
+    opcao = input_text("Deseja gerar por UF ou DDD?  digite UF ou DDD:").strip()
     
     ddds = []
     uf_info = None
@@ -118,7 +119,7 @@ def gerar_numeros(conexao):
         exibir_mensagem(f"Encontrados {len(ddds)} DDDs para UF {uf}: {', '.join(ddds)}", "sucesso")
         uf_info = uf
         
-    else:  # ddd
+    elif opcao.lower() == "ddd":
         ddd = input_ddd()
         
         if not ddd.isdigit() or len(ddd) != 2:
@@ -131,6 +132,28 @@ def gerar_numeros(conexao):
         
         ddds = [ddd]
         uf_info = obter_uf_por_ddd(ddd)
+    elif opcao.isalpha() and len(opcao) == 2:
+        uf = opcao.upper()
+        ddds = obter_ddds_por_uf(uf)
+        
+        if ddds is None:
+            exibir_mensagem(f"UF {uf} não encontrada.", "erro")
+            return
+        
+        exibir_mensagem(f"Encontrados {len(ddds)} DDDs para UF {uf}: {', '.join(ddds)}", "sucesso")
+        uf_info = uf
+    elif opcao.isdigit() and len(opcao) == 2:
+        ddd = opcao
+        
+        if not validar_ddd(ddd):
+            exibir_mensagem(f"DDD {ddd} não é válido.", "erro")
+            return
+        
+        ddds = [ddd]
+        uf_info = obter_uf_por_ddd(ddd)
+    else:
+        exibir_mensagem("Opção inválida. Use 'uf', 'ddd', UF de 2 letras ou DDD de 2 dígitos.", "erro")
+        return
     
     tipo = input_tipo_numero()
     quantidade = input_quantidade()
@@ -155,7 +178,7 @@ def gerar_numeros(conexao):
                     numeros = gerar_multiples_numeros(ddd, qtd, tipo)
                     numeros_gerados.extend(numeros)
         else:
-            ddd_escolhido = input(f"Escolha um DDD entre {', '.join(ddds)}")
+            ddd_escolhido = input_text(f"Escolha um DDD entre {', '.join(ddds)}").strip()
             if ddd_escolhido in ddds:
                 numeros_gerados = gerar_multiples_numeros(ddd_escolhido, quantidade, tipo)
             else:
@@ -206,18 +229,18 @@ def buscar_historico(conexao):
     exibir_mensagem("\n--- BUSCAR HISTÓRICO ---", "info")
     exibir_mensagem("Use os filtros abaixo para refinar os resultados.", "info")
 
-    opcao = input("Filtrar por (nenhum/tipo/ficticio/estado): ").strip().lower()
+    opcao = input_text("Filtrar por (nenhum/tipo/ficticio/estado):").strip().lower()
     filtro = {}
 
     if opcao == "tipo":
-        tipo = input("Tipo (Celular/Fixo/Outro): ").strip().capitalize()
+        tipo = input_text("Tipo (Celular/Fixo/Outro):").strip().capitalize()
         if tipo not in ["Celular", "Fixo", "Outro"]:
             exibir_mensagem("Tipo inválido. Use Celular, Fixo ou Outro.", "erro")
             return
         filtro['tipo'] = tipo
 
     elif opcao == "ficticio":
-        resposta = input("Mostrar apenas números fictícios? (s/n): ").strip().lower()
+        resposta = input_sim_nao("Mostrar apenas números fictícios? (s/n):")
         if resposta not in ["s", "n"]:
             exibir_mensagem("Resposta inválida. Use s ou n.", "erro")
             return

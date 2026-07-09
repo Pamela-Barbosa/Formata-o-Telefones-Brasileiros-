@@ -236,8 +236,7 @@ def main():
             console.print(f"[green]Consulta salva com ID {id_reg}[/]")
 
         # Pausa para o usuário ver o resultado antes de voltar ao menu
-        input("\nPressione Enter para continuar...")
-
+            Prompt.ask("\nPressione Enter para continuar...", default="")
     # Fecha a conexão com o banco de dados (boa prática)
     conexao.close()
 

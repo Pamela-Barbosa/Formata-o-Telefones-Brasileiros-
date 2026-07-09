@@ -158,6 +158,15 @@ def input_numero(mensagem="Digite o número de telefone"):
     return Prompt.ask(mensagem)
 
 
+def input_text(mensagem, default=None):
+    """
+    Solicita um texto ao usuário.
+    """
+    if default is not None:
+        return Prompt.ask(mensagem, default=default)
+    return Prompt.ask(mensagem)
+
+
 def input_ddd():
     """
     Solicita um DDD ao usuário.
