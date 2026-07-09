@@ -8,7 +8,6 @@ from phonenumbers import number_type, PhoneNumberType
 from phonenumbers import geocoder
 from rich.console import Console
 from rich.table import Table
-from rich.prompt import Prompt, IntPrompt
 
 # Conecta ao arquivo do banco de dados 
 conexao = sqlite3.connect("telefones_ddd.db")
@@ -159,7 +158,11 @@ def menu():
     console.print("[1] Validar e formatar numero")
     console.print("[2] Consultar DDD (cidades/estado)")
     console.print("[0] Sair")
-    return IntPrompt.ask("\nEscolha uma opcao", choices=["0", "1", "2"])
+    while True:
+        opcao = console.input("\nEscolha uma opcao [0-2]: ").strip()
+        if opcao in ["0", "1", "2"]:
+            return int(opcao)
+        console.print("[red]Opção inválida. Digite 0, 1 ou 2.[/]")
 
 #main 
 
@@ -181,7 +184,8 @@ def main():
         elif opcao == 1:
             console.print("\n[bold yellow]--- VALIDAR NUMERO ---[/]")
             # Pede o número ao usuário
-            numero = Prompt.ask("Digite o numero (ex: 11999999999 ou +5511999999999)")
+            console.print("Digite o numero (ex: 11999999999 ou +5511999999999)")
+            numero = console.input("> ").strip()
 
             # Chama a função de validação
             dados = validar_formatar_numero(numero)
@@ -206,7 +210,8 @@ def main():
         # --- Opção 2: Consultar DDD ---
         elif opcao == 2:
             console.print("\n[bold yellow]--- CONSULTAR DDD ---[/]")
-            ddd = Prompt.ask("Digite o DDD (2 digitos)", default="11")
+            console.print("Digite o DDD (2 digitos)")
+            ddd = console.input("> ").strip() or "11"
 
             # Valida se são exatamente 2 dígitos numéricos
             if not ddd.isdigit() or len(ddd) != 2:
@@ -236,7 +241,9 @@ def main():
             console.print(f"[green]Consulta salva com ID {id_reg}[/]")
 
         # Pausa para o usuário ver o resultado antes de voltar ao menu
-            Prompt.ask("\nPressione Enter para continuar...", default="")
+        console.print("\nPressione Enter para continuar...")
+        console.input("> ")
+
     # Fecha a conexão com o banco de dados (boa prática)
     conexao.close()
 

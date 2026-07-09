@@ -3,7 +3,6 @@ Módulo com funções de interface usando a biblioteca Rich.
 """
 from rich.console import Console
 from rich.table import Table
-from rich.prompt import Prompt, IntPrompt
 from rich.panel import Panel
 
 console = Console()
@@ -63,7 +62,6 @@ def exibir_tabela_ddd(ddd, estado, cidades, uf=None):
     table.add_column("Estado", style="cyan")
     table.add_column("Cidades", style="green")
     
-    # Limita a exibição de cidades
     if len(cidades) > 10:
         cidades_str = ", ".join(cidades[:10]) + f"\n... e mais {len(cidades)-10} cidades"
     else:
@@ -125,7 +123,11 @@ def exibir_menu():
     for num, desc in menu_items:
         console.print(f"[{num}] {desc}")
     
-    return IntPrompt.ask("\nEscolha uma opção", choices=["0", "1", "2", "3", "4", "5"])
+    while True:
+        opcao = console.input("\nEscolha uma opção [0-5]: ").strip()
+        if opcao in ["0", "1", "2", "3", "4", "5"]:
+            return int(opcao)
+        console.print("[red]Opção inválida. Digite 0, 1, 2, 3, 4 ou 5.[/]")
 
 
 def exibir_mensagem(mensagem, tipo="info"):
@@ -155,51 +157,71 @@ def input_numero(mensagem="Digite o número de telefone"):
     """
     Solicita um número de telefone ao usuário.
     """
-    return Prompt.ask(mensagem)
+    console.print(mensagem)
+    return console.input("> ").strip()
 
 
 def input_text(mensagem, default=None):
     """
     Solicita um texto ao usuário.
     """
-    if default is not None:
-        return Prompt.ask(mensagem, default=default)
-    return Prompt.ask(mensagem)
+    console.print(mensagem)
+    resposta = console.input("> ").strip()
+    if resposta == "" and default is not None:
+        return default
+    return resposta
 
 
 def input_ddd():
     """
     Solicita um DDD ao usuário.
     """
-    return Prompt.ask("Digite o DDD (2 dígitos)", default="11")
+    console.print("Digite o DDD (2 dígitos)")
+    resposta = console.input("> ").strip()
+    return resposta if resposta != "" else "11"
 
 
 def input_quantidade():
     """
     Solicita a quantidade de números a gerar.
     """
-    return IntPrompt.ask("Quantos números gerar?", default=5)
+    while True:
+        console.print("Quantos números gerar? [5]")
+        resposta = console.input("> ").strip()
+        if resposta == "":
+            return 5
+        if resposta.isdigit() and int(resposta) > 0:
+            return int(resposta)
+        console.print("[red]Digite um número válido maior que zero.[/]")
 
 
 def input_uf():
     """
     Solicita uma UF ao usuário.
     """
-    return Prompt.ask("Digite a UF (ex: SP, RJ, MG)").upper()
+    console.print("Digite a UF (ex: SP, RJ, MG)")
+    return console.input("> ").strip().upper()
 
 
 def input_tipo_numero():
     """
     Solicita o tipo de número para geração.
     """
-    return Prompt.ask(
-        "Tipo de número? (celular, fixo ou aleatório)",
-        choices=["celular", "fixo", "aleatorio"]
-    )
+    while True:
+        console.print("Tipo de número? (celular, fixo ou aleatório)")
+        resposta = console.input("> ").strip().lower()
+        if resposta in ["celular", "fixo", "aleatorio"]:
+            return resposta
+        console.print("[red]Escolha 'celular', 'fixo' ou 'aleatorio'.[/]")
 
 
 def input_sim_nao(mensagem):
     """
     Solicita uma resposta sim/não ao usuário.
     """
-    return Prompt.ask(mensagem, choices=["s", "n"])
+    while True:
+        console.print(mensagem)
+        resposta = console.input("> ").strip().lower()
+        if resposta in ["s", "n"]:
+            return resposta
+        console.print("[red]Digite s ou n.[/]")
